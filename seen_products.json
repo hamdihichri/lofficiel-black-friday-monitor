@@ -238,5 +238,45 @@
     "stock": "En stock",
     "url": "https://lofficielshop.tn/fr/black-friday/4229-tv-tcl-43-s5k-qled-full-hd-smart.html",
     "image_url": "https://lofficielshop.tn/fr/25993-large_default/tv-tcl-43-s5k-qled-full-hd-smart.jpg"
+  },
+  "8059": {
+    "id": "8059",
+    "title": "PC Portable Lenovo V15 G5 IRL / Intel Core i7-13620H / 8 Go DDR5 / 512 Go SSD / 15.6\" FHD / Noir",
+    "price": "2 899,000 TND",
+    "regular_price": "2 999,000 TND",
+    "discount": "-100,000 TND",
+    "stock": "En stock",
+    "url": "https://lofficielshop.tn/fr/black-friday/8059-pc-portable-lenovo-v15-g5-irl-intel-core-i7-13620h-8-go-ddr5-512-go-ssd-156-fhd-noir.html",
+    "image_url": "https://lofficielshop.tn/fr/25973-large_default/pc-portable-lenovo-v15-g5-irl-intel-core-i7-13620h-8-go-ddr5-512-go-ssd-156-fhd-noir.jpg"
+  },
+  "4983": {
+    "id": "4983",
+    "title": "PC PORTABLE MSI Modern 15 CORE 7 150U-32G-512SSD-Intel UHD-FD",
+    "price": "2 999,000 TND",
+    "regular_price": "3 299,000 TND",
+    "discount": "-300,000 TND",
+    "stock": "En stock",
+    "url": "https://lofficielshop.tn/fr/pc-gamer/4983-pc-portable-msi-modern-15-core-7-150u-32g-512ssd-intel-uhd-fd.html",
+    "image_url": "https://lofficielshop.tn/fr/25829-large_default/pc-portable-msi-modern-15-core-7-150u-32g-512ssd-intel-uhd-fd.jpg"
+  },
+  "4982": {
+    "id": "4982",
+    "title": "PC PORTABLE MSI Modern 15 CORE 5 120U-32G-512SSD-Intel UHD-FD",
+    "price": "2 499,000 TND",
+    "regular_price": "2 699,000 TND",
+    "discount": "-200,000 TND",
+    "stock": "En stock",
+    "url": "https://lofficielshop.tn/fr/pc-gamer/4982-pc-portable-msi-modern-15-core-5-120u-32g-512ssd-intel-uhd-fd.html",
+    "image_url": "https://lofficielshop.tn/fr/25828-large_default/pc-portable-msi-modern-15-core-5-120u-32g-512ssd-intel-uhd-fd.jpg"
+  },
+  "4962": {
+    "id": "4962",
+    "title": "TÉLÉVISEUR TCL 65'' P6L SMART TV 4K UHD - NOIR",
+    "price": "2 339,000 TND",
+    "regular_price": null,
+    "discount": null,
+    "stock": "En stock",
+    "url": "https://lofficielshop.tn/fr/black-friday/4962-televiseur-tcl-65-p6l-smart-tv-4k-uhd-noir.html",
+    "image_url": "https://lofficielshop.tn/fr/25994-large_default/televiseur-tcl-65-p6l-smart-tv-4k-uhd-noir.jpg"
   }
 }
