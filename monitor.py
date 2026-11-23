@@ -6,7 +6,7 @@ from bs4 import BeautifulSoup
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 
-URL = "https://lofficielshop.tn/fr/1002-black-friday"
+BASE_URL = "https://lofficielshop.tn/fr/1002-black-friday"
 STATE_FILE = "seen_products.json"
 
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -37,10 +37,9 @@ def save_seen_products(products):
 
 def send_telegram_alert(product):
     if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
-        logging.warning("Telegram credentials not found. Notification skipped.")
+        logging.warning("Telegram credentials not configured. Notification skipped.")
         return
 
-    # Format message with HTML
     text = (
         f"🔥 <b>Nouveau Produit Black Friday Détecté !</b>\n\n"
         f"🏷️ <b>Produit:</b> {product['title']}\n"
@@ -66,81 +65,114 @@ def send_telegram_alert(product):
     try:
         res = requests.post(api_url, json=payload, timeout=10)
         res.raise_for_status()
-        logging.info(f"Telegram alert sent for: {product['title']}")
+        logging.info(f"Telegram alert sent for: {product['title']} (ID: {product['id']})")
     except Exception as e:
         logging.error(f"Failed to send Telegram message: {e}")
 
-def scrape_products():
-    response = requests.get(URL, headers=HEADERS, timeout=20)
-    response.raise_for_status()
+def scrape_all_black_friday_products():
+    """
+    Scrapes the Black Friday category sorted by newest additions (date_add.desc),
+    automatically following pagination across all available pages.
+    """
+    all_products = {}
+    page = 1
+    max_pages = 10 # Safety limit
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    products = {}
+    while page <= max_pages:
+        # Sort by newest additions first: order=product.date_add.desc
+        url = f"{BASE_URL}?order=product.date_add.desc&page={page}"
+        logging.info(f"Scanning page {page}: {url}")
 
-    articles = soup.select("article.product-miniature, [data-id-product]")
+        try:
+            response = requests.get(url, headers=HEADERS, timeout=20)
+            response.raise_for_status()
+        except Exception as e:
+            logging.error(f"Failed to fetch page {page}: {e}")
+            break
 
-    for item in articles:
-        prod_id = item.get("data-id-product")
+        soup = BeautifulSoup(response.text, "html.parser")
+        articles = soup.select("article.product-miniature, [data-id-product]")
 
-        title_elem = item.select_one("a.product_name, .product-title a, h3 a")
-        price_elem = item.select_one(".price, .price-sale")
-        reg_price_elem = item.select_one(".regular-price")
-        discount_elem = item.select_one(".discount-amount, .product-flag .discount")
-        stock_elem = item.select_one(".availability span")
-        img_elem = item.select_one(".product-thumbnail img")
+        if not articles:
+            logging.info(f"No products found on page {page}. Stopping pagination.")
+            break
 
-        if not title_elem:
-            continue
+        page_count = 0
+        for item in articles:
+            prod_id = item.get("data-id-product")
 
-        url = title_elem.get("href", "").strip()
-        title = title_elem.get("title") or title_elem.get_text(strip=True)
-        price = price_elem.get_text(strip=True).replace("\xa0", " ") if price_elem else "N/A"
-        regular_price = reg_price_elem.get_text(strip=True).replace("\xa0", " ") if reg_price_elem else None
-        discount = discount_elem.get_text(strip=True).replace("\xa0", " ") if discount_elem else None
-        stock = stock_elem.get_text(strip=True) if stock_elem else None
-        image_url = img_elem.get("data-full-size-image-url") or img_elem.get("data-src") if img_elem else None
+            title_elem = item.select_one("a.product_name, .product-title a, h3 a")
+            price_elem = item.select_one(".price, .price-sale")
+            reg_price_elem = item.select_one(".regular-price")
+            discount_elem = item.select_one(".discount-amount, .product-flag .discount")
+            stock_elem = item.select_one(".availability span")
+            img_elem = item.select_one(".product-thumbnail img")
 
-        key = prod_id if prod_id else url
+            if not title_elem:
+                continue
 
-        if key and url:
-            products[key] = {
-                "id": prod_id,
-                "title": title,
-                "price": price,
-                "regular_price": regular_price,
-                "discount": discount,
-                "stock": stock,
-                "url": url,
-                "image_url": image_url
-            }
+            url_prod = title_elem.get("href", "").strip()
+            title = title_elem.get("title") or title_elem.get_text(strip=True)
+            price = price_elem.get_text(strip=True).replace("\xa0", " ") if price_elem else "N/A"
+            regular_price = reg_price_elem.get_text(strip=True).replace("\xa0", " ") if reg_price_elem else None
+            discount = discount_elem.get_text(strip=True).replace("\xa0", " ") if discount_elem else None
+            stock = stock_elem.get_text(strip=True) if stock_elem else None
+            image_url = img_elem.get("data-full-size-image-url") or img_elem.get("data-src") if img_elem else None
 
-    return products
+            # Unique key: primary PrestaShop product ID
+            key = str(prod_id) if prod_id else url_prod
+
+            if key and url_prod and key not in all_products:
+                all_products[key] = {
+                    "id": key,
+                    "title": title,
+                    "price": price,
+                    "regular_price": regular_price,
+                    "discount": discount,
+                    "stock": stock,
+                    "url": url_prod,
+                    "image_url": image_url
+                }
+                page_count += 1
+
+        logging.info(f"Found {page_count} products on page {page}.")
+
+        # Check if there is a next page link
+        has_next = soup.select_one('a[rel="next"], .pagination .next')
+        if not has_next:
+            logging.info("Reached last page.")
+            break
+
+        page += 1
+
+    return all_products
 
 def main():
     seen = load_seen_products()
-    current = scrape_products()
-    logging.info(f"Successfully scraped {len(current)} products from Black Friday page.")
+    current = scrape_all_black_friday_products()
+    logging.info(f"Total products found across all pages: {len(current)}.")
 
-    # On the very first run, seed database without spamming
+    # First run initialization (avoids spamming all products initially)
     if not seen:
         logging.info("Initializing database with existing products (first run).")
         save_seen_products(current)
         return
 
-    # Check for new products
+    # Check strictly for uncataloged products
     new_items_found = False
     for prod_id, info in current.items():
         if prod_id not in seen:
-            logging.info(f"🚨 NEW PRODUCT DETECTED: {info['title']}")
+            logging.info(f"🚨 BRAND NEW PRODUCT DETECTED: {info['title']} (ID: {prod_id})")
             send_telegram_alert(info)
+            # Add to seen immediately so it can NEVER trigger again
             seen[prod_id] = info
             new_items_found = True
 
     if new_items_found:
         save_seen_products(seen)
-        logging.info("Saved updated products to database.")
+        logging.info(f"Database updated. Total seen products: {len(seen)}.")
     else:
-        logging.info("Scan completed: No new products detected.")
+        logging.info("Scan completed: No new products detected. Zero spam sent.")
 
 if __name__ == "__main__":
     main()
